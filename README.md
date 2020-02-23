@@ -1,2 +1,2 @@
 # HttpServer
-A simple restfull http server
+A simple restful http server
