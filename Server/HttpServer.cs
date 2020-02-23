@@ -33,13 +33,14 @@ namespace HttpServer
             try
             {
                 _listener.Start();
-                Console.WriteLine(string.Format("server started at {0}:{1}", _ip, _port));
+                Logger.Info(string.Format("server started at {0}:{1}", _ip, _port));
                 
                 routeManager.Init();
 
             } catch (Exception e)
             {
-                throw new Exception(e.Message);
+                Logger.Error(e.ToString());
+                return;
             }
             //_listener.BeginGetContext(ProcessRequest, null);
             
@@ -88,7 +89,7 @@ namespace HttpServer
 
                 context.Response.Close();
 
-                Console.WriteLine(string.Format("[{0}] {1} {2} status:{3}", DateTime.Now.ToString(), context.Request.HttpMethod, url, context.Response.StatusCode));
+                Logger.Info(string.Format("{0} {1} status:{2}", context.Request.HttpMethod, url, context.Response.StatusCode));
             }
             catch (Exception e)
             {
@@ -121,7 +122,7 @@ namespace HttpServer
 
             context.Response.Close();
 
-            Console.WriteLine(string.Format("[{0}] {1} {2} status:{3}", DateTime.Now.ToString(), context.Request.HttpMethod, url, context.Response.StatusCode));
+            Logger.Info(string.Format("{0} {1} status:{2}", context.Request.HttpMethod, url, context.Response.StatusCode));
         }
     }
 }

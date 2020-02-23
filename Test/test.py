@@ -16,7 +16,7 @@ class RequestThread(threading.Thread):
     def run(self):
         while True:
             self.test_performace()
-            time.sleep(0.1)
+            time.sleep(0.2)
 
     def test_performace(self):
         try:

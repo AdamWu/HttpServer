@@ -60,6 +60,8 @@
     <Compile Include="Handler\RoomHandler.cs" />
     <Compile Include="Handler\ServerHandler.cs" />
     <Compile Include="Handler\UserHandler.cs" />
+    <Compile Include="Logger\Logger.cs" />
+    <Compile Include="Logger\LoggerTraceListener.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Routing\IRouteHandler.cs" />

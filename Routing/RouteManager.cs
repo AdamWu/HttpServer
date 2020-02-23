@@ -28,7 +28,7 @@ namespace HttpServer
 
         public void Init()
         {
-            Console.WriteLine("RouteManager init...");
+            Logger.Info("RouteManager init...");
             foreach (var type in this.GetType().Assembly.GetTypes())
             {                
                 if (type.GetInterfaces().Any(x => x.FullName.Contains("IRouteHandler")))
@@ -55,12 +55,12 @@ namespace HttpServer
         {
             if(m_Routes.ContainsKey(route))
             {
-                Console.WriteLine("error route!");
+                Logger.Error("error route!");
                 return;
             }
             m_Routes.Add(route, new RouteAction(type, method));
 
-            Console.WriteLine(string.Format("add route {0} -> {1}:{2}", route, type.Name, method.Name));
+            Logger.Info(string.Format("add route {0} -> {1}:{2}", route, type.Name, method.Name));
         }
 
         public RouteAction GetRoute(string route)
