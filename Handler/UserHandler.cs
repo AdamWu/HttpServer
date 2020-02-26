@@ -4,14 +4,13 @@ using System.Linq;
 using System.Net;
 using System.IO;
 using System.Data;
-using Newtonsoft.Json;
 
 namespace HttpServer
 {
     public class Token
     {
-        const int EXPIRE = 60 * 2;
-        //const int EXPIRE = 60 * 60 * 24;// 24h
+        //const int EXPIRE = 60 * 2;
+        const int EXPIRE = 60 * 60 * 24;// 24h
 
         public string Uid;
         public string Key;
@@ -103,69 +102,62 @@ namespace HttpServer
             var request = context.Request;
             var response = context.Response;
 
-            string sql = "select * from user";
-            DataSet ds = MysqlHelper.ExecuteDataSet(sql);
-
-            Dictionary<string, object> dic = new Dictionary<string, object>();
-            dic.Add("code", 0);
+            Dictionary<string, object> result = new Dictionary<string, object>();
+            result.Add("code", 0);
             List<object> data = new List<object>();
-            dic.Add("data", data);
-            foreach (DataRow row in ds.Tables[0].Rows)
+            result.Add("data", data);
+
+            List<User> users = UserService.GetAllUsers();
+            for (int i = 0; i < users.Count; i ++)
             {
-                Dictionary<string, object> user = new Dictionary<string, object>();
-                user.Add("id", row["id"]);
-                user.Add("name", row["name"]);
-                data.Add(user);
+                User user = users[i];
+                Dictionary<string, object> dic = new Dictionary<string, object>();
+                dic.Add("id", user.ID);
+                dic.Add("name", user.Name);
+                data.Add(dic);
             }
             
-            Response(context, dic);
+            Response(context, result);
         }
 
-        [RouteAttribute("/user/add")]
+        [RouteAttribute("/user/register")]
         public void AddUser(HttpListenerContext context)
         {
             var request = context.Request;
             var response = context.Response;
             
             string name = request.QueryString["name"];
-            string pwd = request.QueryString["password"];
+            string password = request.QueryString["password"];
 
-            // —È÷§token
-            string token = request.QueryString["token"];
-            if (!ValidateToken(token))
-            {
-                ResponseTokenInvalid(context);
-                return;
-            }
-            if (name == null || pwd == null)
+            if (name == null || password == null)
             {
                 ResponseParameterInvalid(context);
                 return;
             }
 
-            Dictionary<string, object> dic = new Dictionary<string, object>();
-            string sql = string.Format("select * from user where name='{0}'", name);
-            DataSet ds = MysqlHelper.ExecuteDataSet(sql);
-            if(ds.Tables[0].Rows.Count == 0)
+            Dictionary<string, object> result = new Dictionary<string, object>();
+
+            User user = UserService.GetUserByName(name);
+            if (user == null)
             {
-                sql = string.Format("insert into user(name, password) values('{0}','{1}')",name, pwd);
-                int rows = MysqlHelper.ExecuteNonQuery(sql);
-                if (rows > 0)
+                user = UserService.AddUser(name, password);
+                if (user != null)
                 {
-                    dic.Add("code", 0);
-                    dic.Add("data", new Dictionary<string, object>());
-                } else
+                    result.Add("code", 0);
+                    result.Add("data", new Dictionary<string, object>());
+                }
+                else
                 {
-                    dic.Add("code", -1);
-                    dic.Add("msg", "operate fail");
+                    result.Add("code", -1);
+                    result.Add("msg", "operate fail");
                 }
             } else
             {
-                dic.Add("code", -1);
-                dic.Add("msg", "name already exists");
+                result.Add("code", -1);
+                result.Add("msg", "name already exists");
             }
 
-            Response(context, dic);
+            Response(context, result);
         }
 
         [RouteAttribute("/user/delete")]
@@ -189,20 +181,19 @@ namespace HttpServer
                 return;
             }
 
-            Dictionary<string, object> dic = new Dictionary<string, object>();
-            string sql = string.Format("delete from user where id={0}", id);
-            int rows = MysqlHelper.ExecuteNonQuery(sql);
-            if (rows > 0)
+            Dictionary<string, object> result = new Dictionary<string, object>();
+            bool success = UserService.DeleteUser(int.Parse(id));
+            if (success)
             {
-                dic.Add("code", 0);
-                dic.Add("data", new Dictionary<string, object>());
+                result.Add("code", 0);
+                result.Add("data", new Dictionary<string, object>());
             }
             else
             {
-                dic.Add("code", -1);
-                dic.Add("msg", "operate fail");
+                result.Add("code", -1);
+                result.Add("msg", "operate fail");
             }
-            Response(context, dic);
+            Response(context, result);
         }
         
         [RouteAttribute("/user/login")]
@@ -220,35 +211,32 @@ namespace HttpServer
                 return;
             }
 
-            Dictionary<string, object> dic = new Dictionary<string, object>();
-            string sql = string.Format("select id from user where name='{0}' and password='{1}'", name, pwd);
-            DataSet ds = MysqlHelper.ExecuteDataSet(sql);
-            if (ds.Tables[0].Rows.Count > 0)
-            {
-                DataRow row = ds.Tables[0].Rows[0];
-                string uid = row.Field<int>("id").ToString();
+            Dictionary<string, object> result = new Dictionary<string, object>();
 
-                Token token = GetToken(uid);
+            User user = UserService.GetUserByNameAndPassword(name, pwd);
+            if (user != null)
+            {
+                Token token = GetToken(user.ID.ToString());
                 if (token != null)
                 {
                     Sessions.Remove(token.Key);
                 }
-                token = GenerateToken(uid);
+                token = GenerateToken(user.ID.ToString());
 
-                dic.Add("code", 0);
+                result.Add("code", 0);
                 Dictionary<string, object> data = new Dictionary<string, object>();
-                dic.Add("data", data);
-                data.Add("uid", uid);
+                result.Add("data", data);
+                data.Add("id", user.ID);
                 data.Add("token", token.Key);
                 data.Add("expire_time", token.ExpireTime);
             }
             else
             {
-                dic.Add("code", -1);
-                dic.Add("msg", "wrong name or password");
+                result.Add("code", -1);
+                result.Add("msg", "wrong name or password");
             }
 
-            Response(context, dic);
+            Response(context, result);
         }
 
         [RouteAttribute("/user/logout")]
