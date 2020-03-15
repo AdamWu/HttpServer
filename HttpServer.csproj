@@ -55,12 +55,15 @@
   <ItemGroup>
     <Compile Include="Config.cs" />
     <Compile Include="DataService\Model\Record.cs" />
+    <Compile Include="DataService\Model\Scene.cs" />
     <Compile Include="DataService\RecordService.cs" />
     <Compile Include="DataService\RoomService.cs" />
+    <Compile Include="DataService\SceneService.cs" />
     <Compile Include="DataService\UserService.cs" />
     <Compile Include="Handler\BaseHandler.cs" />
     <Compile Include="Handler\RecordHandler.cs" />
     <Compile Include="Handler\RoomHandler.cs" />
+    <Compile Include="Handler\SceneHandler.cs" />
     <Compile Include="Handler\ServerHandler.cs" />
     <Compile Include="Handler\UserHandler.cs" />
     <Compile Include="Logger\Logger.cs" />

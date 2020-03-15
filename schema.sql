@@ -29,5 +29,14 @@ create table if not exists record(
 	is_deleted tinyint(1) DEFAULT'0' NOT NULL
 ) default charset=utf8;
 
+create table if not exists scene(
+	id int PRIMARY KEY AUTO_INCREMENT,
+	name varchar(255) NOT NULL,
+	description text NOT NULL,
+	create_time datetime DEFAULT CURRENT_TIMESTAMP NOT NULL,
+	file varchar(100) NOT NULL,
+	is_deleted tinyint(1) DEFAULT'0' NOT NULL
+) default charset=utf8;
+
 -- insert data
 insert into user(name,password,type) values('admin','123456',1);

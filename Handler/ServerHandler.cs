@@ -94,12 +94,16 @@ namespace HttpServer
             string filename = "";
             using (Stream body = request.InputStream)
             {
-                int len = (int)request.ContentLength64;
-                byte[] data = new byte[len];
-                body.Read(data, 0, (int)len);
                 if (!Directory.Exists("frame")) Directory.CreateDirectory("frame");
                 filename = "frame/" + DateTime.Now.ToString("yyyyMMddHHmmssfff") + ".bin";
-                File.WriteAllBytes(filename, data);
+                FileStream fs = new FileStream(filename, FileMode.Create);
+                byte[] buff = new byte[1024];
+                int count = 0;
+                while ((count = body.Read(buff, 0, 1024)) != 0)
+                {
+                    fs.Write(buff, 0, count);
+                }
+                fs.Close();
             }
 
             Dictionary<string, object> result = new Dictionary<string, object>();
@@ -107,7 +111,48 @@ namespace HttpServer
             if (record != null)
             {
                 result.Add("code", 0);
-                result.Add("data", record.ToJson());
+                result.Add("data", new Dictionary<string, object>());
+            }
+            else
+            {
+                result.Add("code", -1);
+                result.Add("msg", "operate fail");
+            }
+
+            Response(context, result);
+        }
+
+        [RouteAttribute("/server/scene")]
+        public void Scene(HttpListenerContext context)
+        {
+            var request = context.Request;
+            var response = context.Response;
+
+            string name = request.QueryString["name"];
+            string description = request.QueryString["description"];
+
+            //读取客户端发送过来的数据
+            string filename = "";
+            using (Stream body = request.InputStream)
+            {
+                if (!Directory.Exists("scene")) Directory.CreateDirectory("scene");
+                filename = "scene/" + DateTime.Now.ToString("yyyyMMddHHmmssfff") + ".zip";
+                FileStream fs = new FileStream(filename, FileMode.Create);
+                byte[] buff = new byte[1024];
+                int count = 0;
+                while ((count = body.Read(buff, 0, 1024)) != 0)
+                {
+                    fs.Write(buff, 0, count);
+                }
+                fs.Close();
+            }
+
+            Dictionary<string, object> result = new Dictionary<string, object>();
+            Scene scene = SceneService.AddScene(name, description, filename);
+            if (scene != null)
+            {
+                result.Add("code", 0);
+                result.Add("data", new Dictionary<string, object>());
             }
             else
             {
