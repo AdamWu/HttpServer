@@ -56,73 +56,70 @@ namespace HttpServer
             _listener.Stop();
         }
         
-        public async void Listen()
-        {
-            while (true)
-            {
-                var context = await _listener.GetContextAsync();
-                Console.WriteLine("Client connected");
-                Task.Factory.StartNew(() => ProcessRequest(context));
-            }
-        }
-
-        private void ProcessRequest(IAsyncResult result)
-        {
-            HttpListenerContext context = null;
-            try
-            {
-                _listener.BeginGetContext(ProcessRequest, null);
-                context = _listener.EndGetContext(result);
-                
-                string url = context.Request.Url.AbsolutePath;
-
-                RouteAction ra = routeManager.GetRoute(url);
-                if(ra != null)
-                {
-                    context.Response.StatusCode = 200;
-                    //object obj = Activator.CreateInstance(ra.Type);
-                    //ra.Method.Invoke(obj, new object[] { context });
-                } else
-                {
-                    context.Response.StatusCode = 404;
-                }
-
-                context.Response.Close();
-
-                Logger.Info(string.Format("{0} {1} status:{2}", context.Request.HttpMethod, url, context.Response.StatusCode));
-            }
-            catch (Exception e)
-            {
-                context.Response.StatusCode = 400;
-                using (StreamWriter writer = new StreamWriter(context.Response.OutputStream))
-                {
-                    writer.Write(e.Message);
-                    writer.Close();
-                }
-            }
-        }
-
         private void ProcessRequest(object o)
         {
             HttpListenerContext context = (HttpListenerContext)o;
 
+            var request = context.Request;
+            var response = context.Response;
             string url = context.Request.Url.AbsolutePath;
 
             RouteAction ra = routeManager.GetRoute(url);
             if (ra != null)
             {
-                context.Response.StatusCode = 200;
+                response.StatusCode = 200;
                 object obj = Activator.CreateInstance(ra.Type);
                 ra.Method.Invoke(obj, new object[] { context });
             }
             else
             {
-                context.Response.StatusCode = 404;
+                // 静态资源
+                string filePath = Environment.CurrentDirectory+ url;
+                if (File.Exists(filePath))
+                {
+                    response.StatusCode = 200;
+                    string exeName = Path.GetExtension(filePath);
+                    response.ContentType = GetContentType(exeName);
+                    FileStream fileStream = new System.IO.FileStream(filePath, System.IO.FileMode.Open, System.IO.FileAccess.Read, FileShare.ReadWrite);
+                    int byteLength = (int)fileStream.Length;
+                    byte[] fileBytes = new byte[byteLength];
+                    fileStream.Read(fileBytes, 0, byteLength);
+                    fileStream.Close();
+                    fileStream.Dispose();
+                    response.ContentLength64 = byteLength;
+                    response.OutputStream.Write(fileBytes, 0, byteLength);
+                    response.OutputStream.Close();
+                }
+                else
+                {
+                    response.StatusCode = 404;
+                    response.ContentLength64 = 0;
+                }
             }
+
+            Logger.Info(string.Format("{0} {1} status:{2}", context.Request.HttpMethod, url, context.Response.StatusCode));
 
             context.Response.Close();
 
-            Logger.Info(string.Format("{0} {1} status:{2}", context.Request.HttpMethod, url, context.Response.StatusCode));
+        }
+
+        /// 获取文件对应MIME类型  
+        protected string GetContentType(string fileExtention)
+        {
+            if (string.Compare(fileExtention, ".html", true) == 0 || string.Compare(fileExtention, ".htm", true) == 0)
+                return "text/html;charset=utf-8";
+            else if (string.Compare(fileExtention, ".js", true) == 0)
+                return "application/javascript";
+            else if (string.Compare(fileExtention, ".css", true) == 0)
+                return "application/javascript";
+            else if (string.Compare(fileExtention, ".png", true) == 0)
+                return "image/png";
+            else if (string.Compare(fileExtention, ".jpg", true) == 0 || string.Compare(fileExtention, ".jpeg", true) == 0)
+                return "image/jpeg";
+            else if (string.Compare(fileExtention, ".gif", true) == 0)
+                return "image/gif";
+            else
+                return "application/octet-stream";
         }
     }
 }

@@ -6,10 +6,11 @@ using MySql.Data.MySqlClient;
 
 class MysqlHelper
 {        
-    public static string connectionString = "server=127.0.0.1;port=3306;user=root;password=120688wuyunze; database=frame;";
-    public MysqlHelper()
-    {
+    static string connectionString = "server=127.0.0.1;port=3306;user=;password=;database=;";
 
+    public static void Init(string ip, int port,string user, string password, string database)
+    {
+        connectionString = string.Format("server={0};port={1};user={2};password={3};database={4};", ip, port, user, password, database);
     }
 
     public static MySqlConnection CreateConnection()

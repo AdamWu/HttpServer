@@ -43,9 +43,6 @@
       <SpecificVersion>False</SpecificVersion>
       <HintPath>lib\MySql.Data.dll</HintPath>
     </Reference>
-    <Reference Include="Newtonsoft.Json">
-      <HintPath>lib\Newtonsoft.Json.dll</HintPath>
-    </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
     <Reference Include="System.Xml.Linq" />
@@ -57,9 +54,12 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Config.cs" />
+    <Compile Include="DataService\Model\Record.cs" />
+    <Compile Include="DataService\RecordService.cs" />
     <Compile Include="DataService\RoomService.cs" />
     <Compile Include="DataService\UserService.cs" />
     <Compile Include="Handler\BaseHandler.cs" />
+    <Compile Include="Handler\RecordHandler.cs" />
     <Compile Include="Handler\RoomHandler.cs" />
     <Compile Include="Handler\ServerHandler.cs" />
     <Compile Include="Handler\UserHandler.cs" />
@@ -69,10 +69,12 @@
     <Compile Include="DataService\Model\User.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="Server\HttpListenerPostValue.cs" />
     <Compile Include="Server\Routing\IRouteHandler.cs" />
     <Compile Include="Server\Routing\RouteAttribute.cs" />
     <Compile Include="Server\Routing\RouteManager.cs" />
     <Compile Include="Server\HttpServer.cs" />
+    <Compile Include="Utils\MiniJSON.cs" />
     <Compile Include="Utils\MysqlHelper.cs" />
   </ItemGroup>
   <ItemGroup>

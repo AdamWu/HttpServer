@@ -1,10 +1,8 @@
 using System;
 using System.Collections.Generic;
-using System.Linq;
+using System.Text;
 using System.Net;
 using System.IO;
-using System.Data;
-using Newtonsoft.Json;
 
 namespace HttpServer
 {
@@ -12,20 +10,18 @@ namespace HttpServer
     {
         public void Response(HttpListenerContext context, string json)
         {
+            context.Response.ContentType = "application/json;charset=UTF-8";
+            context.Response.ContentEncoding = Encoding.UTF8;
             using (StreamWriter writer = new StreamWriter(context.Response.OutputStream))
             {
                 writer.Write(json);
                 writer.Close();
             }
-        }
+         }
 
         public void Response(HttpListenerContext context, Dictionary<string, object> dic)
         {
-            using (StreamWriter writer = new StreamWriter(context.Response.OutputStream))
-            {
-                writer.Write(JsonConvert.SerializeObject(dic));
-                writer.Close();
-            }
+            Response(context, MiniJSON.Json.Serialize(dic));
         }
 
         public void ResponseTokenInvalid(HttpListenerContext context)
@@ -34,11 +30,7 @@ namespace HttpServer
             dic.Add("code", -1);
             dic.Add("msg", "token invalid!");
 
-            using (StreamWriter writer = new StreamWriter(context.Response.OutputStream))
-            {
-                writer.Write(JsonConvert.SerializeObject(dic));
-                writer.Close();
-            }
+            Response(context, dic);
         }
 
         public void ResponseParameterInvalid(HttpListenerContext context)
@@ -47,11 +39,7 @@ namespace HttpServer
             dic.Add("code", -1);
             dic.Add("msg", "parameter invalid!");
 
-            using (StreamWriter writer = new StreamWriter(context.Response.OutputStream))
-            {
-                writer.Write(JsonConvert.SerializeObject(dic));
-                writer.Close();
-            }
+            Response(context, dic);
         }
 
     }

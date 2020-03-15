@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
+using System.Text;
 
 namespace HttpServer
 {
@@ -60,9 +61,12 @@ namespace HttpServer
                 ResponseParameterInvalid(context);
                 return;
             }
-            
+            title = Encoding.GetEncoding("utf-8").GetString(request.ContentEncoding.GetBytes(title));
+            description = Encoding.GetEncoding("utf-8").GetString(request.ContentEncoding.GetBytes(description));
+            string uid = UserHandler.GetUidByToken(token);
+
             Dictionary<string, object> result = new Dictionary<string, object>();
-            Room room = RoomService.AddRoom(title, description, int.Parse(time), int.Parse(attendance));
+            Room room = RoomService.AddRoom(int.Parse(uid), title, description, int.Parse(time), int.Parse(attendance));
             if (room != null)
             {
                 result.Add("code", 0);
@@ -100,11 +104,13 @@ namespace HttpServer
             
             Dictionary<string, object> result = new Dictionary<string, object>();
 
-            bool success = RoomService.DeleteRoom(int.Parse(id));
+            bool success = RoomService.SoftDeleteRoom(int.Parse(id));
             if (success)
             {
                 result.Add("code", 0);
-                result.Add("data", new Dictionary<string,object>());
+                Dictionary<string, object> data = new Dictionary<string, object>();
+                data.Add("id", int.Parse(id));
+                result.Add("data", data);
             } else
             {
                 result.Add("code", -1);
@@ -214,7 +220,9 @@ namespace HttpServer
                     if (success)
                     {
                         result.Add("code", 0);
-                        result.Add("data", new Dictionary<string, object>());
+                        Dictionary<string, object> data = new Dictionary<string, object>();
+                        data.Add("id", int.Parse(id));
+                        result.Add("data", data);
                     } else
                     {
                         result.Add("code", -1);
@@ -267,7 +275,9 @@ namespace HttpServer
                     if (success)
                     {
                         result.Add("code", 0);
-                        result.Add("data", new Dictionary<string, object>());
+                        Dictionary<string, object> data = new Dictionary<string, object>();
+                        data.Add("id", int.Parse(id));
+                        result.Add("data", data);
                     }
                     else
                     {

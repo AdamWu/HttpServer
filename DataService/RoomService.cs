@@ -20,7 +20,7 @@ public class RoomService
 
     public static List<Room> GetAllRooms()
     {
-        string sql = "select * from room";
+        string sql = "select * from room where is_deleted=0";
         DataSet ds = MysqlHelper.ExecuteDataSet(sql);
 
         List<Room> rooms = new List<Room>();
@@ -59,11 +59,11 @@ public class RoomService
         return rooms;
     }
 
-    public static Room AddRoom(string title, string description, int time, int attendance)
+    public static Room AddRoom(int userid, string title, string description, int time, int attendance)
     {
         MySqlConnection connection = MysqlHelper.CreateConnection();
 
-        string sql = string.Format("insert into room(title, description, time, attendance) values('{0}','{1}',{2},{3})", title, description, time, attendance);
+        string sql = string.Format("insert into room(title, description, time, attendance, user_id) values('{0}','{1}',{2},{3},{4})", title, description, time, attendance, userid);
         int rows = MysqlHelper.ExecuteNonQuery(connection, sql);
         if (rows > 0)
         {
@@ -78,6 +78,17 @@ public class RoomService
         MysqlHelper.CloseConnection(connection);
 
         return null;
+    }
+
+    public static bool SoftDeleteRoom(int id)
+    {
+        string sql = string.Format("update room SET is_deleted=1 where id={0}", id);
+        int rows = MysqlHelper.ExecuteNonQuery(sql);
+        if (rows > 0)
+        {
+            return true;
+        }
+        return false;
     }
 
     public static bool DeleteRoom(int id)

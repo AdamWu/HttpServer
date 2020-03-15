@@ -2,8 +2,6 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
-using System.IO;
-using System.Data;
 
 namespace HttpServer
 {
@@ -28,13 +26,22 @@ namespace HttpServer
     {
         // token
         static Dictionary<string, Token> Sessions = new Dictionary<string, Token>();
-        
-        Token GetToken(string uid)
+
+        static public Token GetToken(string uid)
         {
             foreach (string key in Sessions.Keys)
             {
                 Token token = Sessions[key];
                 if(token.Uid == uid) return token;
+            }
+            return null;
+        }
+
+        static public string GetUidByToken(string key)
+        {
+            if (Sessions.ContainsKey(key))
+            {
+                return Sessions[key].Uid;
             }
             return null;
         }
@@ -89,11 +96,12 @@ namespace HttpServer
                 ResponseTokenInvalid(context);
                 return;
             }
-            Dictionary<string, object> dic = new Dictionary<string, object>();
-            dic.Add("code", 0);
-            dic.Add("data", new Dictionary<string, object>());
 
-            Response(context, dic);
+            Dictionary<string, object> result = new Dictionary<string, object>();
+            result.Add("code", 0);
+            result.Add("data", new Dictionary<string, object>());
+
+            Response(context, result);
         }
         
         [RouteAttribute("/user/list")]
@@ -101,6 +109,14 @@ namespace HttpServer
         {
             var request = context.Request;
             var response = context.Response;
+            
+            // 验证token
+            string token = request.QueryString["token"];
+            if (!ValidateToken(token))
+            {
+                ResponseTokenInvalid(context);
+                return;
+            }
 
             Dictionary<string, object> result = new Dictionary<string, object>();
             result.Add("code", 0);
@@ -111,10 +127,7 @@ namespace HttpServer
             for (int i = 0; i < users.Count; i ++)
             {
                 User user = users[i];
-                Dictionary<string, object> dic = new Dictionary<string, object>();
-                dic.Add("id", user.ID);
-                dic.Add("name", user.Name);
-                data.Add(dic);
+                data.Add(user.ToJson());
             }
             
             Response(context, result);
@@ -181,17 +194,47 @@ namespace HttpServer
                 return;
             }
 
+            // 返回结果
             Dictionary<string, object> result = new Dictionary<string, object>();
-            bool success = UserService.DeleteUser(int.Parse(id));
-            if (success)
-            {
-                result.Add("code", 0);
-                result.Add("data", new Dictionary<string, object>());
-            }
-            else
+            string uid = GetUidByToken(token);
+            User user = UserService.GetUserByID(int.Parse(uid));
+            if (user == null)
             {
                 result.Add("code", -1);
                 result.Add("msg", "operate fail");
+            }
+            else if (user.Type == 0)
+            {
+                result.Add("code", -1);
+                result.Add("data", "permission error");
+            } else
+            {
+                User user2 = UserService.GetUserByID(int.Parse(id));
+                if (user2 == null)
+                {
+                    result.Add("code", -1);
+                    result.Add("msg", "user not found");
+                }
+                else if (user2.Type > user.Type)
+                {
+                    result.Add("code", -1);
+                    result.Add("msg", "permission error");
+                } else
+                {
+                    bool success = UserService.DeleteUser(int.Parse(id));
+                    if (success)
+                    {
+                        result.Add("code", 0);
+                        Dictionary<string, object> data = new Dictionary<string, object>();
+                        data.Add("id", int.Parse(id));
+                        result.Add("data", data);
+                    }
+                    else
+                    {
+                        result.Add("code", -1);
+                        result.Add("msg", "operate fail");
+                    }
+                }
             }
             Response(context, result);
         }
@@ -204,8 +247,9 @@ namespace HttpServer
 
             string name = request.QueryString["name"];
             string pwd = request.QueryString["password"];
+            string type = request.QueryString["type"];
 
-            if (name == null || pwd == null)
+            if (name == null || pwd == null || type == null)
             {
                 ResponseParameterInvalid(context);
                 return;
@@ -213,9 +257,10 @@ namespace HttpServer
 
             Dictionary<string, object> result = new Dictionary<string, object>();
 
-            User user = UserService.GetUserByNameAndPassword(name, pwd);
+            User user = UserService.GetUserByNameAndPassword(name, pwd, int.Parse(type));
             if (user != null)
             {
+                UserService.UpdateLoginTimeByID(user.ID);
                 Token token = GetToken(user.ID.ToString());
                 if (token != null)
                 {
@@ -227,8 +272,10 @@ namespace HttpServer
                 Dictionary<string, object> data = new Dictionary<string, object>();
                 result.Add("data", data);
                 data.Add("id", user.ID);
+                data.Add("name", user.Name);
+                data.Add("type", user.Type);
                 data.Add("token", token.Key);
-                data.Add("expire_time", token.ExpireTime);
+                data.Add("expire", token.ExpireTime);
             }
             else
             {
@@ -257,10 +304,11 @@ namespace HttpServer
                 Sessions.Remove(token);
             }
 
-            Dictionary<string, object> dic = new Dictionary<string, object>();
-            dic.Add("code", 0);
-            dic.Add("data", new Dictionary<string, object>());
-            Response(context, dic);
+            Dictionary<string, object> result = new Dictionary<string, object>();
+            result.Add("code", 0);
+            result.Add("data", new Dictionary<string, object>());
+            Response(context, result);
         }
+
     }
 }

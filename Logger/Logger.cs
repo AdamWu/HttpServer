@@ -13,10 +13,10 @@ public class Logger
 
     static Logger()
     {
-        string basePath = AppDomain.CurrentDomain.BaseDirectory + "\\Logs\\";
+        string basePath = AppDomain.CurrentDomain.BaseDirectory + "\\logs\\";
         if (!Directory.Exists(basePath))
             Directory.CreateDirectory(basePath);
-        string fileName = basePath + string.Format("Log-{0}.txt", DateTime.Now.ToString("yyyyMMdd-HH-mm-ss"));
+        string fileName = basePath + string.Format("log-{0}.txt", DateTime.Now.ToString("yyyyMMdd-HH-mm-ss"));
 
         Trace.AutoFlush = true;
         Trace.Listeners.Clear();
